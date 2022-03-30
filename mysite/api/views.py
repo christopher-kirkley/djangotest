@@ -1,8 +1,12 @@
+import imp
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
-from rest_framework import viewsets
-from rest_framework import permissions
+from rest_framework import viewsets, status, permissions
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from api import serializers
 
 from api.models import Artist
@@ -21,46 +25,46 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-@csrf_exempt
-def artist_list(request):
-    if request.method == 'GET':
+class ArtistList(APIView):
+    """
+    List all artists, or create new artist.
+    """
+    def get(self, request, format=None):
         artists = Artist.objects.all()
         serializer = ArtistSerializer(artists, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
     
-    elif request.method == 'POST':
-        data = JSONParser().parse(request)
-        serializer = ArtistSerializer(data=data)
+    def post(self, request, format=None):
+        serializer = ArtistSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse(serializer.data, status=201)
-        return JsonResponse(serializer.errors, status=400)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@csrf_exempt
-def artist_detail(request, pk):
+
+class ArtistDetail(APIView):
     """
     Retrieve, update or delete artist.
     """
-    try:
-        artist = Artist.objects.get(pk=pk)
-    except Artist.DoesNotExist:
-        return HttpResponse(status=404)
-    
-    if request.method == 'GET':
-        serializer = ArtistSerializer(artist)
-        return JsonResponse(serializer.data, safe=False)
+    def get_object(self, pk):
+        try:
+            return Artist.objects.get(pk=pk)
+        except Artist.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
-    elif request.method == 'PUT':
-        data = JSONParser().parse(request)
-        serializer = ArtistSerializer(data=data)
+    def get(self, request, pk, format=None):
+        artist = self.get_object(pk)
+        serializer = ArtistSerializer(artist)
+        return Response(serializer.data)
+    
+    def put(self, request, pk, format=None):
+        serializer = ArtistSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse(serializer.data)
-        return JsonResponse(serializer.errors, status=400)
-
-    elif request.method == 'DELETE':
-        artist.delete()
-        return HttpResponse(status=204)
-
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=400)
     
-    return HttpResponse(status=404)
+    def delete(self, request, pk, format=None):
+        artist = self.get_object(pk)
+        artist.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
