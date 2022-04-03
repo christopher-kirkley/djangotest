@@ -11,3 +11,6 @@ class Artist(models.Model):
 
     class Meta:
         ordering = ['created']
+
+class Track(models.Model):
+    track_name = models.CharField(max_length=100, blank=True, default='')
