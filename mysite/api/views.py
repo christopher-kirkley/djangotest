@@ -19,32 +19,48 @@ from rest_framework import generics
 from api.permissions import IsOwnerOrReadOnly
 
 
-@api_view(['GET'])
-def api_root(request, format=None):
-    return Response({
-        'users': reverse('user-list', request=request, format=format),
-        'snippets': reverse('artist-list', request=request, format=format)
-    })
+# @api_view(['GET'])
+# def api_root(request, format=None):
+#     return Response({
+#         'users': reverse('user-list', request=request, format=format),
+#         'artists': reverse('artist-list', request=request, format=format)
+#     })
 
-class ArtistList(generics.ListCreateAPIView):
-    queryset = Artist.objects.all()
-    serializer_class = ArtistSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+# class ArtistList(generics.ListCreateAPIView):
+#     queryset = Artist.objects.all()
+#     serializer_class = ArtistSerializer
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+#     def perform_create(self, serializer):
+#         serializer.save(owner=self.request.user)
 
-class ArtistDetail(generics.RetrieveUpdateDestroyAPIView):
+# class ArtistDetail(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = Artist.objects.all()
+#     serializer_class = ArtistSerializer
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
+
+class ArtistViewSet(viewsets.ModelViewSet):
+    """
+    Viewset providing list, create, and retrieve
+    """
     queryset = Artist.objects.all()
     serializer_class = ArtistSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
 
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
-class UserList(generics.ListAPIView):
+
+
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+# class UserList(generics.ListAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
 
-class UserDetail(generics.RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+
+# class UserDetail(generics.RetrieveAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
